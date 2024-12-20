@@ -31,8 +31,8 @@ use_repo(
 )
 
 register_toolchains(
-    "@//pyo3/toolchains:toolchain",
-    "@//pyo3/toolchains:rust_toolchain",
+    "//pyo3/toolchains:toolchain",
+    "//pyo3/toolchains:rust_toolchain",
 )
 
 bazel_dep(
