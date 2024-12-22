@@ -12,7 +12,6 @@ module(
 
 bazel_dep(name = "rules_python", version = "1.0.0")
 bazel_dep(name = "rules_pyo3", version = "0.0.0")
-
 local_path_override(
     module_name = "rules_pyo3",
     path = "../..",
