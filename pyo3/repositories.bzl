@@ -39,3 +39,50 @@ def register_pyo3_toolchains(register_toolchains = True):
             str(Label("//pyo3/toolchains:toolchain")),
             str(Label("//pyo3/toolchains:rust_toolchain")),
         )
+
+_TOOLCHAIN_BUILD_TEMPLATE = """
+load("@rules_rust//rust:defs.bzl", "rust_library_group")
+load("@rules_pyo3//pyo3:defs.bzl", "pyo3_toolchain", "rust_pyo3_toolchain")
+
+rust_library_group(
+    name = "pyo3",
+    deps = [
+        "{PYO3}",
+    ],
+)
+
+rust_pyo3_toolchain(
+    name = "rust_pyo3_toolchain",
+    pyo3 = ":pyo3",
+)
+
+toolchain(
+    name = "rust_toolchain",
+    toolchain = ":rust_pyo3_toolchain",
+    toolchain_type = "@rules_pyo3//pyo3:rust_toolchain_type",
+)
+
+pyo3_toolchain(
+    name = "pyo3_toolchain",
+)
+
+toolchain(
+    name = "toolchain",
+    toolchain = ":pyo3_toolchain",
+    toolchain_type = "@rules_pyo3//pyo3:toolchain_type",
+)
+"""
+
+def _pyo3_toolchain_repo_impl(repository_ctx):
+    repository_ctx.file("WORKSPACE.bazel", """workspace(name = "{}")""".format(repository_ctx.name))
+    repository_ctx.file(
+        "BUILD.bazel",
+        _TOOLCHAIN_BUILD_TEMPLATE.format(PYO3 = repository_ctx.attr.pyo3),
+    )
+
+pyo3_toolchain_repo = repository_rule(
+    implementation = _pyo3_toolchain_repo_impl,
+    attrs = {
+        "pyo3": attr.label(doc = "The PyO3 to use."),
+    },
+)

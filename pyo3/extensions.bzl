@@ -1,23 +1,39 @@
 """Bzlmod module extensions"""
 
-load("//pyo3/3rdparty/crates:crates.bzl", "crate_repositories")
+load("//pyo3:repositories.bzl", "pyo3_toolchain_repo")
 
-def _rust_ext_impl(module_ctx):
-    # This should contain the subset of WORKSPACE.bazel that defines
-    # repositories.
-    direct_deps = []
+def _find_module(module_ctx):
+    rules_pyo3 = None
+    root = None
+    for mod in module_ctx.modules:
+        if mod.name == "rules_pyo3":
+            rules_pyo3 = mod
+        if mod.is_root:
+            root = mod
+    if rules_pyo3 == None:
+        fail("couldn't find rules_pyo3")
+    return root, rules_pyo3
 
-    direct_deps.extend(crate_repositories())
+def _pyo3_impl(module_ctx):
+    root, rules_pyo3 = _find_module(module_ctx)
+    toolchains = root.tags.toolchain or rules_pyo3.tags.toolchain
+    toolchain_names = []
+    for toolchain in toolchains:
+        toolchain_name = str(toolchain.pyo3)
+        pyo3_toolchain_repo(
+            name = "pyo3_toolchains",
+            pyo3 = toolchain.pyo3,
+        )
+        toolchain_names.append(toolchain_name)
 
-    # is_dev_dep is ignored here. It's not relevant for internal_deps, as dev
-    # dependencies are only relevant for module extensions that can be used
-    # by other MODULES.
-    return module_ctx.extension_metadata(
-        root_module_direct_deps = [repo.repo for repo in direct_deps],
-        root_module_direct_dev_deps = [],
-    )
-
-rust_ext = module_extension(
-    doc = "Dependencies for pyo3 rules extension.",
-    implementation = _rust_ext_impl,
+pyo3 = module_extension(
+    doc = "pyo3 toolchain extension.",
+    tag_classes = {
+        "toolchain": tag_class(
+            attrs = {
+                "pyo3": attr.label(doc = "The PyO3 to use."),
+            },
+        ),
+    },
+    implementation = _pyo3_impl,
 )
