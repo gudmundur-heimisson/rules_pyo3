@@ -128,6 +128,7 @@ def pyo3_extension(
         deps = [],
         edition = None,
         imports = [],
+        platform = None,
         proc_macro_deps = [],
         rustc_env = {},
         rustc_env_files = [],
@@ -162,6 +163,8 @@ def pyo3_extension(
             For more details see [rust_shared_library][rsl].
         imports (list, optional): List of import directories to be added to the `PYTHONPATH`.
             For more details see [py_library.imports][pli].
+        platform (Label, optional): Optional platform to transition the binary to.
+            For more details see [rust_shared_library][rsl].
         proc_macro_deps (list, optional): List of `rust_proc_macro` targets used to help build this library target.
             For more details see [rust_shared_library][rsl].
         rustc_env (dict, optional): Dictionary of additional `"key": "value"` environment variables to set for rustc.
@@ -179,6 +182,10 @@ def pyo3_extension(
     tags = kwargs.pop("tags", [])
     visibility = kwargs.pop("visibility", None)
 
+    if platform != None and "musl" in platform:
+        # see: https://github.com/PyO3/pyo3/issues/1109
+        rustc_flags = rustc_flags + ["-C", "target-feature=-crt-static"]
+
     rust_shared_library(
         name = name + "_shared",
         aliases = aliases,
@@ -192,6 +199,7 @@ def pyo3_extension(
             Label("@rules_python//python/cc:current_py_cc_libs"),
         ] + deps,
         edition = edition,
+        platform = platform,
         proc_macro_deps = proc_macro_deps,
         rustc_env = rustc_env,
         rustc_env_files = rustc_env_files,
