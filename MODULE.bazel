@@ -22,7 +22,17 @@ bazel_dep(
     version = "0.0.10",
 )
 
+pyo3_vendored = use_extension("@rules_pyo3//pyo3:extensions.bzl", "rpyo3c")
+use_repo(pyo3_vendored, "rpyo3c", "rpyo3c__pyo3-0.21.2", "rpyo3c__pyo3-ffi-0.21.2")
+
 pyo3 = use_extension("@rules_pyo3//pyo3:extensions.bzl", "pyo3")
+use_repo(pyo3, "pyo3_toolchains")
+pyo3.toolchain(
+    name = "pyo3_toolchains",
+    pyo3 = "@rpyo3c//:pyo3",
+)
+
+register_toolchains("@pyo3_toolchains//:all")
 
 bazel_dep(
     name = "stardoc",
